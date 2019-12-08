@@ -1,6 +1,6 @@
-use nom::{IResult, Err};
-use nom::bytes::complete::tag;
-//use nom::number::streaming::{le_u32, le_u64};
+use nom::{IResult};
+use nom::bytes::complete::{tag, take};
+use nom::number::streaming::{le_i32};
 
 #[derive(Clone,Debug,PartialEq,Eq)]
 pub struct BAI {
@@ -13,6 +13,11 @@ pub struct BAI {
 pub fn parse_magic(input: &[u8]) -> IResult<&[u8], &[u8]> {
     let (input, magic) = tag("BAI")(input)?;
     Ok((input, magic))
+}
+
+pub fn parse_n_ref(input: &[u8]) -> IResult<&[u8], i32> {
+    let (input, n_ref) = le_i32(&input[5..5])?;
+    Ok((input, n_ref))
 }
 
 #[derive(Clone,Debug,PartialEq,Eq)]
@@ -43,8 +48,16 @@ mod tests {
     const BAI_FILE: &'static [u8] = include_bytes!("../tests/data/htsnexus_test_NA12878.bam.bai");
 
     #[test]
-    fn bai_magic() {
-        let magic = parse_magic(&BAI_FILE[..3]);
-        assert_eq!(Ok((&[][..], b"BAI")), magic);
+    fn magic() {
+        let field = &BAI_FILE[..3];
+        let res = parse_magic(field);
+        assert_eq!(Ok((&b""[..], &b"BAI"[..])), res);
+    }
+
+    #[test]
+    fn n_refs() {
+        let field = &BAI_FILE[5..5];
+        let res = parse_n_ref(field);
+        assert_eq!(Ok((le_i32(field), &b"32")), res);
     }
 }

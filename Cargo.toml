@@ -1,5 +1,5 @@
 [package]
-name = "htsget-index-formats"
+name = "bio-index-formats"
 version = "0.1.0"
 authors = ["Roman Valls Guimera <brainstorm@nopcode.org>"]
 edition = "2018"
