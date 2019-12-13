@@ -1,7 +1,7 @@
 /// BinsForRange returns the list of bins that may overlap with the zero-based region
 /// defined by [start, end). The minShift and depth parameters control the minimum interval width
 /// and number of binning levels, respectively.
-fn bins_for_range(start: u32, mut end: u32, min_shift: u32, depth: u32) -> Vec<u32> {
+pub fn bins_for_range(start: u32, mut end: u32, min_shift: u32, depth: u32) -> Vec<u32> {
     let max_width = maximum_bin_width(min_shift, depth);
     let mut bins: Vec<u32> = Vec::new();
 
