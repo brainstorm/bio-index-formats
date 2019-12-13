@@ -1,9 +1,9 @@
-use crate::csi::{ bins_for_range };
+//use crate::csi::{ bins_for_range };
 
 use nom::{IResult};
 //use nom::bytes::streaming::{tag, take};
 //use nom::number::streaming::{le_u32};
-use nom::bytes::complete::{ tag, take };
+use nom::bytes::complete::{ tag };
 use nom::number::complete::{ le_u32, le_u64 };
 
 #[derive(Clone,Debug,PartialEq,Eq)]
@@ -39,28 +39,30 @@ pub struct ChunkPos {
 pub fn parse_bai(input: &[u8]) -> IResult<&[u8], u32> {
     let (input, _) = parse_magic(input)?;
     let (input, n_refs) = le_u32(input)?;
-    let refs = parse_list_indexes(input)?;
+    let (input, refs) = parse_list_indexes(input)?;
     Ok((input, n_refs))
 }
 
-pub fn parse_list_indexes(input: &[u8]) -> IResult<&[u8], &[u8]> {
-    let bins_range = bins_for_range(2,3,14,5);
+pub fn parse_list_indexes(input: &[u8]) -> IResult<&[u8], (u32, u32, &[u8])> {
+    //let bins_range = bins_for_range(2,3,14,5);
     let (input, n_bin) = le_u32(input)?;
     let (input, bin) = parse_bin(input)?;
     let (input, n_intv) = le_u32(input)?;
     let (input, ioffset) = le_u64(input)?;
+    Ok((input, bin))
 }
 
-pub fn parse_bin(input: &[u8]) -> IResult<&[u8], &[u8]> {
-    let (input, bin) = le_u32(input)?;
+pub fn parse_bin(input: &[u8]) -> IResult<&[u8], (u32, u32, &[u8])> {
+    let (input, bin_id) = le_u32(input)?;
     let (input, n_chunk) = le_u32(input)?;
     let chunk = parse_chunk(input)?;
+    Ok((input, input))
 }
 
-pub fn parse_chunk(input: &[u8]) -> IResult<u64, u64> {
+pub fn parse_chunk(input: &[u8]) -> IResult<&[u8], (u64, u64)> {
     let (input, chunk_beg) = le_u64(input)?;
     let (input, chunk_end) = le_u64(input)?;
-    Ok((chunk_beg, chunk_end))
+    Ok((input, (chunk_beg, chunk_end)))
 }
 
 pub fn parse_magic(input: &[u8]) -> IResult<&[u8], &[u8]> {
