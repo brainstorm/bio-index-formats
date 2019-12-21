@@ -47,7 +47,6 @@ pub fn parse_bai(input: &'static[u8]) -> IResult<&[u8], BAI> {
 }
 
 pub fn parse_list_indexes(input: &[u8]) -> IResult<&[u8], ListIndexes> {
-    //let bins_range = bins_for_range(2,3,14,5);
     let (input, n_bin) = le_u32(input)?;
     let (input, bins) = parse_bin(input)?;
     let (input, n_intv) = le_u32(input)?;
@@ -70,6 +69,7 @@ pub fn parse_chunk(input: &[u8]) -> IResult<&[u8], ChunkPos> {
 
 pub fn parse_magic(input: &'static[u8]) -> IResult<&[u8], &'static[u8;4]> {
     let (input, magic) = tag("BAI\x01")(input)?;
+    // XXX: Do not panic here
     Ok((input, magic.try_into().expect("wrong header length")))
 }
 
@@ -80,16 +80,17 @@ mod tests {
 
     const BAI_FILE: &'static [u8] = include_bytes!("../tests/data/htsnexus_test_NA12878.bam.bai");
 
-//    #[test]
-//    fn magic() {
-//        let field = &BAI_FILE[..4];
-//        let res = parse_magic(field);
-//        assert_eq!(Ok((&b""[0..4], &b"BAI\x01"[0..4])), res);
-//    }
+    #[test]
+    fn magic() {
+        let field = &BAI_FILE[..4];
+        let res = parse_magic(field);
+        assert_eq!(Ok((field, b"BAI\x01")), res);
+    }
 
 //    #[test]
 //    fn bai() {
 //        let res = parse_bai(BAI_FILE);
-//        assert_eq!(Ok((le_u32(res), 56)), res);
+//        let listidx = parse_list_indexes(BAI_FILE);
+//        assert_eq!(Ok((res, BAI { magic, n_ref: 1, refs: listidx, n_no_coor: 1 })), res);
 //    }
 }
