@@ -5,12 +5,11 @@ use nom::{IResult};
 //use nom::number::streaming::{le_u32};
 use nom::bytes::complete::{ tag };
 use nom::number::complete::{ le_u32, le_u64 };
-use std::convert::TryInto;
 
 
 #[derive(Clone,Debug,PartialEq,Eq)]
 pub struct BAI {
-    pub magic: &'static[u8;4],
+    pub magic: String,
     pub n_ref: u32,
     pub refs: ListIndexes,
     pub n_no_coor: u64,
@@ -43,7 +42,7 @@ pub fn parse_bai(input: &'static[u8]) -> IResult<&[u8], BAI> {
     let (input, n_ref) = le_u32(input)?;
     let (input, refs) = parse_list_indexes(input)?;
     let (input, n_no_coor) = le_u64(input)?;
-    Ok((input, BAI{ magic, n_ref, refs, n_no_coor }))
+    Ok((input, BAI { magic, n_ref, refs, n_no_coor }))
 }
 
 pub fn parse_list_indexes(input: &[u8]) -> IResult<&[u8], ListIndexes> {
@@ -67,10 +66,9 @@ pub fn parse_chunk(input: &[u8]) -> IResult<&[u8], ChunkPos> {
     Ok((input, ChunkPos { chunk_beg, chunk_end }))
 }
 
-pub fn parse_magic(input: &'static[u8]) -> IResult<&[u8], &'static[u8;4]> {
+pub fn parse_magic(input: &[u8]) -> IResult<&[u8], String> {
     let (input, magic) = tag("BAI\x01")(input)?;
-    // XXX: Do not panic here
-    Ok((input, magic.try_into().expect("wrong header length")))
+    Ok((input, String::from_utf8_lossy(magic).to_string()))
 }
 
 
@@ -81,16 +79,23 @@ mod tests {
     const BAI_FILE: &'static [u8] = include_bytes!("../tests/data/htsnexus_test_NA12878.bam.bai");
 
     #[test]
-    fn magic() {
-        let field = &BAI_FILE[..4];
-        let res = parse_magic(field);
-        assert_eq!(Ok((field, b"BAI\x01")), res);
+    fn magic_test() {
+        let field = "BAI\x01";
+        let res = parse_magic(BAI_FILE);
+        match res {
+            Ok((_, output)) => assert_eq!(field, output),
+            _ => assert!(false)
+        }
     }
 
-//    #[test]
-//    fn bai() {
-//        let res = parse_bai(BAI_FILE);
-//        let listidx = parse_list_indexes(BAI_FILE);
-//        assert_eq!(Ok((res, BAI { magic, n_ref: 1, refs: listidx, n_no_coor: 1 })), res);
-//    }
+    #[test]
+    fn n_refs_test() {
+        let res = parse_bai(BAI_FILE);
+        match res {
+            Ok((_, output)) => {
+                assert_eq!(output.n_ref, 86);
+            }
+            _ => assert!(false)
+        }
+    }
 }
