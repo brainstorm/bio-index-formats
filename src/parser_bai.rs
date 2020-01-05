@@ -10,14 +10,14 @@ use nom::number::complete::{ le_u32, le_u64 };
 #[derive(Clone,Debug,PartialEq,Eq)]
 pub struct BAI {
     pub magic: String,
-    pub n_refs: u32,
+    //pub n_refs: u32, # already on Vec<Ref>.size(), no need to store it
     pub refs: Vec<Ref>,
     pub n_no_coor: u64,
 }
 
 #[derive(Clone,Debug,PartialEq,Eq)]
 pub struct Ref {
-    pub n_bins: u32,
+    //pub n_bins: u32, # already on Vec<Bin>.size(), no need to store it
     pub bins: Vec<Bin>,
     pub n_intv: u32,
     pub ioffset: u64,
@@ -26,7 +26,7 @@ pub struct Ref {
 #[derive(Clone,Debug,PartialEq,Eq)]
 pub struct Bin {
     pub bin_id: u32,
-    //pub n_chunk: u32, # already on Vec.size
+    //pub n_chunk: u32, # already on Vec<ChunkPos>.size, no need to store it
     pub chunks: Vec<ChunkPos>,
 }
 
@@ -50,7 +50,7 @@ pub fn parse_bai(input: &'static[u8]) -> IResult<&[u8], BAI> {
     }
 
     let (input, n_no_coor) = le_u64(input)?;
-    Ok((input, BAI { magic, n_refs, refs, n_no_coor }))
+    Ok((input, BAI { magic, refs, n_no_coor }))
 }
 
 pub fn parse_refs(input: &[u8]) -> IResult<&[u8], Ref> {
@@ -68,7 +68,7 @@ pub fn parse_refs(input: &[u8]) -> IResult<&[u8], Ref> {
 
     let (input, n_intv) = le_u32(input)?;
     let (input, ioffset) = le_u64(input)?;
-    Ok((input, Ref { n_bins, bins, n_intv, ioffset }))
+    Ok((input, Ref { bins, n_intv, ioffset }))
 }
 
 pub fn parse_bins(input: &[u8]) -> IResult<&[u8], Bin> {
@@ -102,26 +102,26 @@ mod tests {
 
     const BAI_FILE: &'static [u8] = include_bytes!("../tests/data/htsnexus_test_NA12878.bam.bai");
 
-//    #[test]
-//    fn magic_test() {
-//        let field = "BAI\x01";
-//        let res = parse_magic(BAI_FILE);
-//        match res {
-//            Ok((_, output)) => assert_eq!(field, output),
-//            _ => assert!(false)
-//        }
-//    }
-//
-//    #[test]
-//    fn n_refs_test() {
-//        let res = parse_bai(BAI_FILE);
-//        match res {
-//            Ok((_, output)) => {
-//                assert_eq!(output.n_ref, 86);
-//            }
-//            _ => assert!(false)
-//        }
-//    }
+    #[test]
+    fn magic_test() {
+        let field = "BAI\x01";
+        let res = parse_magic(BAI_FILE);
+        match res {
+            Ok((_, output)) => assert_eq!(field, output),
+            _ => assert!(false)
+        }
+    }
+
+    #[test]
+    fn n_refs_test() {
+        let res = parse_bai(BAI_FILE);
+        match res {
+            Ok((_, output)) => {
+                assert_eq!(output.n_ref, 86);
+            }
+            _ => assert!(false)
+        }
+    }
 
     #[test]
     fn chunks_test() {
