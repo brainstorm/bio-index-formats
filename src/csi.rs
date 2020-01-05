@@ -34,3 +34,14 @@ pub fn bins_for_range(start: u32, mut end: u32, min_shift: u32, depth: u32) -> V
 fn maximum_bin_width(min_shift: u32, depth: u32) -> u32 {
     return 1 << min_shift + depth * 3;
 }
+
+
+//#[cfg(test)]
+//mod tests {
+//    use super::*;
+//
+//    #[test]
+//    fn csi_test() {
+//        bins_for_range(3, 10,14, 5);
+//    }
+//}
