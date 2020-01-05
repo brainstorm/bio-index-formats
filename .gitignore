@@ -1,3 +1,4 @@
 /target
 **/*.rs.bk
 .idea
+tests/data/SBJ00154_PRJ190634_LPRJ190634-ready.bam.bai
