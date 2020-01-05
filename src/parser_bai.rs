@@ -113,17 +113,6 @@ mod tests {
     }
 
     #[test]
-    fn n_refs_test() {
-        let res = parse_bai(BAI_FILE);
-        match res {
-            Ok((_, output)) => {
-                assert_eq!(output.n_ref, 86);
-            }
-            _ => assert!(false)
-        }
-    }
-
-    #[test]
     fn chunks_test() {
         let input = vec![
             0x04, 0x03, 0x02, 0x01, // bin_id
