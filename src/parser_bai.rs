@@ -19,8 +19,7 @@ pub struct BAI {
 pub struct Ref {
     //pub n_bins: u32, # already on Vec<Bin>.size(), no need to store it
     pub bins: Vec<Bin>,
-    pub n_intv: u32,
-    pub ioffset: u64,
+    pub intervals: Vec<u64>,
 }
 
 #[derive(Clone,Debug,PartialEq,Eq)]
@@ -36,11 +35,19 @@ pub struct ChunkPos {
     pub chunk_end: u64,
 }
 
+pub struct FileOffsets {
+    /// compressed offset
+    pub coffset: u32,
+    /// uncompressed offset
+    pub uoffset: u32,
+}
 
 pub fn parse_bai(input: &'static[u8]) -> IResult<&[u8], BAI> {
     let (input, magic) = parse_magic(input)?;
     let (input, n_refs) = le_u32(input)?;
 
+    // "List of indices (n=n_ref)" section on SAMv1 spec
+    // https://samtools.github.io/hts-specs/SAMv1.pdf
     let mut refs = Vec::<Ref>::with_capacity(n_refs as usize);
     let mut input2 = input; // XXX: no need to copy input on upper scope
     for _ in 0..n_refs {
@@ -49,7 +56,7 @@ pub fn parse_bai(input: &'static[u8]) -> IResult<&[u8], BAI> {
         input2 = input;
     }
 
-    let (input, n_no_coor) = le_u64(input)?;
+    let (input, n_no_coor) = le_u64(input)?; // XXX: Should perhaps not be here?
     Ok((input, BAI { magic, refs, n_no_coor }))
 }
 
@@ -58,6 +65,7 @@ pub fn parse_refs(input: &[u8]) -> IResult<&[u8], Ref> {
 
     let (input, n_bins) = le_u32(input)?;
 
+    // "List of distinct bins (n=n_bin)" on SAMv1 spec
     let mut bins = Vec::<Bin>::with_capacity(n_bins as usize);
     let mut input2 = input; // XXX: no need to copy input on upper scope
     for _ in 0..n_bins {
@@ -66,9 +74,24 @@ pub fn parse_refs(input: &[u8]) -> IResult<&[u8], Ref> {
         input2 = input;
     }
 
+    // # 16kbp intervals (for the linear index)
     let (input, n_intv) = le_u32(input)?;
+
+    let mut intervals = Vec::<u64>::with_capacity(n_intv as usize);
+    let mut input2 = input; // XXX: no need to copy input on upper scope
+    let (input, n_intv) = le_u32(input)?;
+    for _ in 0..n_intv {
+        let (input, interval) = parse_intervals(input2)?;
+        intervals.push(interval);
+        input2 = input;
+    }
+
+    Ok((input, Ref { bins, intervals }))
+}
+
+pub fn parse_intervals (input: &[u8]) -> IResult<&[u8], u64> {
     let (input, ioffset) = le_u64(input)?;
-    Ok((input, Ref { bins, n_intv, ioffset }))
+    Ok((input, ioffset))
 }
 
 pub fn parse_bins(input: &[u8]) -> IResult<&[u8], Bin> {
@@ -87,7 +110,18 @@ pub fn parse_bins(input: &[u8]) -> IResult<&[u8], Bin> {
 pub fn parse_chunks(input: &[u8]) -> IResult<&[u8], ChunkPos> {
     let (input, chunk_beg) = le_u64(input)?;
     let (input, chunk_end) = le_u64(input)?;
+
+    let offsets_beg = from_offset(chunk_beg);
+    let offsets_end = from_offset(chunk_end);
+    //println!("{}", offsets_beg.coffset);
+
     Ok((input, ChunkPos { chunk_beg, chunk_end }))
+}
+
+fn from_offset(offsets: u64) -> FileOffsets {
+    let coffset = ((offsets >> 16) & 0xffff) as u32;
+    let uoffset = (offsets & 0xffff ) as u32;
+    FileOffsets { coffset, uoffset }
 }
 
 pub fn parse_magic(input: &[u8]) -> IResult<&[u8], String> {
