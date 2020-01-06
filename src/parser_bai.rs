@@ -35,7 +35,7 @@ pub struct ChunkPos {
     pub chunk_end: u64,
 }
 
-pub struct FileOffsets {
+pub struct VirtualOffset {
     /// compressed offset
     pub coffset: u32,
     /// uncompressed offset
@@ -111,17 +111,18 @@ pub fn parse_chunks(input: &[u8]) -> IResult<&[u8], ChunkPos> {
     let (input, chunk_beg) = le_u64(input)?;
     let (input, chunk_end) = le_u64(input)?;
 
-    let offsets_beg = from_offset(chunk_beg);
+    //let offsets_beg = from_offset(chunk_beg);
     let offsets_end = from_offset(chunk_end);
     //println!("{}", offsets_beg.coffset);
+    //println!("{}", offsets_end.coffset);
 
     Ok((input, ChunkPos { chunk_beg, chunk_end }))
 }
 
-fn from_offset(offsets: u64) -> FileOffsets {
+fn from_offset(offsets: u64) -> VirtualOffset {
     let coffset = ((offsets >> 16) & 0xffff) as u32;
     let uoffset = (offsets & 0xffff ) as u32;
-    FileOffsets { coffset, uoffset }
+    VirtualOffset { coffset, uoffset }
 }
 
 pub fn parse_magic(input: &[u8]) -> IResult<&[u8], String> {
