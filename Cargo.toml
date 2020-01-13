@@ -5,4 +5,4 @@ authors = ["Roman Valls Guimera <brainstorm@nopcode.org>"]
 edition = "2018"
 
 [dependencies]
-nom = "5.0.1"
+nom = "5.1.0"
