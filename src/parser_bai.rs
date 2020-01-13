@@ -1,9 +1,9 @@
 //use crate::csi::{ bins_for_range };
 
-use nom::{IResult};
+use nom::{ IResult, multi::many0 };
 //use nom::bytes::streaming::{tag, take};
 //use nom::number::streaming::{le_u32};
-use nom::bytes::complete::{ tag };
+use nom::bytes::complete::{ tag, take };
 use nom::number::complete::{ le_u32, le_u64 };
 
 
@@ -45,18 +45,8 @@ pub struct VirtualOffset {
 pub fn parse_bai(input: &'static[u8]) -> IResult<&[u8], BAI> {
     let (input, magic) = parse_magic(input)?;
     let (input, n_refs) = le_u32(input)?;
-
-    // "List of indices (n=n_ref)" section on SAMv1 spec
-    // https://samtools.github.io/hts-specs/SAMv1.pdf
-    let mut refs = Vec::<Ref>::with_capacity(n_refs as usize);
-    let mut input2 = input; // XXX: no need to copy input on upper scope
-    for _ in 0..n_refs {
-        let (input, aref) = parse_refs(input2)?;
-        refs.push(aref);
-        input2 = input;
-    }
-
-    let (input, n_no_coor) = le_u64(input)?; // XXX: Should perhaps not be here?
+    let input, refs = multi(input, n_refs);
+    let (input, n_no_coor) = le_u64(input)?;
     Ok((input, BAI { magic, refs, n_no_coor }))
 }
 
@@ -128,6 +118,10 @@ fn from_offset(offsets: u64) -> VirtualOffset {
 pub fn parse_magic(input: &[u8]) -> IResult<&[u8], String> {
     let (input, magic) = tag("BAI\x01")(input)?;
     Ok((input, String::from_utf8_lossy(magic).to_string()))
+}
+
+pub fn multi(input: &[u8], size: u32) -> IResult<&[u8], Vec<&[u8]>> {
+    many0(take(size))(input)
 }
 
 
