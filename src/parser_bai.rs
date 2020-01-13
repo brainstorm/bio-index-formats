@@ -1,10 +1,11 @@
 //use crate::csi::{ bins_for_range };
 
-use nom::{ IResult, multi::many0 };
+use nom::{ IResult };
 //use nom::bytes::streaming::{tag, take};
 //use nom::number::streaming::{le_u32};
-use nom::bytes::complete::{ tag, take };
+use nom::bytes::complete::{ tag };
 use nom::number::complete::{ le_u32, le_u64 };
+use nom::multi::many_m_n;
 
 
 #[derive(Clone,Debug,PartialEq,Eq)]
@@ -35,46 +36,21 @@ pub struct ChunkPos {
     pub chunk_end: u64,
 }
 
-pub struct VirtualOffset {
-    /// compressed offset
-    pub coffset: u32,
-    /// uncompressed offset
-    pub uoffset: u32,
-}
-
 pub fn parse_bai(input: &'static[u8]) -> IResult<&[u8], BAI> {
     let (input, magic) = parse_magic(input)?;
     let (input, n_refs) = le_u32(input)?;
-    let input, refs = multi(input, n_refs);
+    let (input, refs) = many_m_n(0, n_refs as usize, parse_refs)(input)?;
     let (input, n_no_coor) = le_u64(input)?;
     Ok((input, BAI { magic, refs, n_no_coor }))
 }
 
 pub fn parse_refs(input: &[u8]) -> IResult<&[u8], Ref> {
-    //bins_for_range(region.start, region.end, 14,5);
-
     let (input, n_bins) = le_u32(input)?;
-
     // "List of distinct bins (n=n_bin)" on SAMv1 spec
-    let mut bins = Vec::<Bin>::with_capacity(n_bins as usize);
-    let mut input2 = input; // XXX: no need to copy input on upper scope
-    for _ in 0..n_bins {
-        let (input, bin) = parse_bins(input2)?;
-        bins.push(bin);
-        input2 = input;
-    }
-
+    let (input, bins) = many_m_n(0, n_bins as usize, parse_bins)(input)?;
     // # 16kbp intervals (for the linear index)
     let (input, n_intv) = le_u32(input)?;
-
-    let mut intervals = Vec::<u64>::with_capacity(n_intv as usize);
-    let mut input2 = input; // XXX: no need to copy input on upper scope
-    let (input, n_intv) = le_u32(input)?;
-    for _ in 0..n_intv {
-        let (input, interval) = parse_intervals(input2)?;
-        intervals.push(interval);
-        input2 = input;
-    }
+    let (input, intervals) = many_m_n(0, n_intv as usize, parse_intervals)(input)?;
 
     Ok((input, Ref { bins, intervals }))
 }
@@ -87,13 +63,8 @@ pub fn parse_intervals (input: &[u8]) -> IResult<&[u8], u64> {
 pub fn parse_bins(input: &[u8]) -> IResult<&[u8], Bin> {
     let (input, bin_id) = le_u32(input)?;
     let (input, n_chunk) = le_u32(input)?;
-    let mut chunks = Vec::<ChunkPos>::with_capacity(n_chunk as usize);
-    let mut input2 = input; // XXX: no need to copy input on upper scope
-    for _ in 0..n_chunk {
-        let (input, chunk) = parse_chunks(input2)?;
-        chunks.push(chunk);
-        input2 = input;
-    }
+    let (input, chunks) = many_m_n(0, n_chunk as usize, parse_chunks)(input)?;
+
     Ok((input, Bin { bin_id, chunks }))
 }
 
@@ -101,29 +72,28 @@ pub fn parse_chunks(input: &[u8]) -> IResult<&[u8], ChunkPos> {
     let (input, chunk_beg) = le_u64(input)?;
     let (input, chunk_end) = le_u64(input)?;
 
-    //let offsets_beg = from_offset(chunk_beg);
-    let offsets_end = from_offset(chunk_end);
-    //println!("{}", offsets_beg.coffset);
-    //println!("{}", offsets_end.coffset);
+    // XXX: Just parse a few to assess performance impact
+    parse_coffset(chunk_beg);
+    parse_uoffset(chunk_beg);
+
+    parse_coffset(chunk_end);
+    parse_uoffset(chunk_end);
 
     Ok((input, ChunkPos { chunk_beg, chunk_end }))
 }
 
-fn from_offset(offsets: u64) -> VirtualOffset {
-    let coffset = ((offsets >> 16) & 0xffff) as u32;
-    let uoffset = (offsets & 0xffff ) as u32;
-    VirtualOffset { coffset, uoffset }
+pub fn parse_coffset(voffset: u64) -> u32 {
+    ((voffset >> 16) & 0xffff) as u32
+}
+
+pub fn parse_uoffset(voffset: u64) -> u32 {
+    (voffset & 0xffff ) as u32
 }
 
 pub fn parse_magic(input: &[u8]) -> IResult<&[u8], String> {
     let (input, magic) = tag("BAI\x01")(input)?;
     Ok((input, String::from_utf8_lossy(magic).to_string()))
 }
-
-pub fn multi(input: &[u8], size: u32) -> IResult<&[u8], Vec<&[u8]>> {
-    many0(take(size))(input)
-}
-
 
 #[cfg(test)]
 mod tests {
