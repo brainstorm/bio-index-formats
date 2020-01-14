@@ -11,14 +11,14 @@ use nom::multi::many_m_n;
 #[derive(Clone,Debug,PartialEq,Eq)]
 pub struct BAI {
     pub magic: String,
-    //pub n_refs: u32, # already on Vec<Ref>.size(), no need to store it
+    //pub n_refs: u32, # on spec but already present implicitly in Vec<Ref>.size().
     pub refs: Vec<Ref>,
     pub n_no_coor: u64,
 }
 
 #[derive(Clone,Debug,PartialEq,Eq)]
 pub struct Ref {
-    //pub n_bins: u32, # already on Vec<Bin>.size(), no need to store it
+    //pub n_bins: u32, # already on Vec<Bin>.size(), no need to store it separatedly
     pub bins: Vec<Bin>,
     pub intervals: Vec<u64>,
 }
@@ -35,6 +35,13 @@ pub struct ChunkPos {
     pub chunk_beg: u64,
     pub chunk_end: u64,
 }
+
+#[derive(Clone,Debug,PartialEq,Eq)]
+pub struct VirtualOffset {
+    pub coffset: u32,
+    pub uoffset: u32,
+}
+
 
 pub fn parse_bai(input: &'static[u8]) -> IResult<&[u8], BAI> {
     let (input, magic) = parse_magic(input)?;
@@ -72,21 +79,18 @@ pub fn parse_chunks(input: &[u8]) -> IResult<&[u8], ChunkPos> {
     let (input, chunk_beg) = le_u64(input)?;
     let (input, chunk_end) = le_u64(input)?;
 
-    // XXX: Just parse a few to assess performance impact
-    parse_coffset(chunk_beg);
-    parse_uoffset(chunk_beg);
-
-    parse_coffset(chunk_end);
-    parse_uoffset(chunk_end);
-
     Ok((input, ChunkPos { chunk_beg, chunk_end }))
 }
 
-pub fn parse_coffset(voffset: u64) -> u32 {
+pub fn parse_voffsets(voffset: u64) -> IResult<u64, VirtualOffset> {
+    Ok((voffset, VirtualOffset { coffset: coffset(voffset), uoffset: uoffset(voffset) }))
+}
+
+pub fn coffset(voffset: u64) -> u32 {
     ((voffset >> 16) & 0xffff) as u32
 }
 
-pub fn parse_uoffset(voffset: u64) -> u32 {
+pub fn uoffset(voffset: u64) -> u32 {
     (voffset & 0xffff ) as u32
 }
 
