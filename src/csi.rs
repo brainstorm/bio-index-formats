@@ -39,27 +39,26 @@ fn maximum_bin_width(min_shift: u32, depth: u32) -> u32 {
 
 // This is the SAM spec C code, oxidized by hand.
 // See: https://gist.github.com/brainstorm/f76da194a03730a98e23766134d54d7b
-pub fn reg2bins(beg: u64, mut end: u64) -> Vec<u64> {
-    let mut i: u64 = 0;
-    let mut k: u64;
+pub fn reg2bins(beg: u16, mut end: u16) -> Vec<u16> {
+    let mut k: u16;
     end -= 1;
-    i = i + 1;
-    let mut list = Vec::<u64>::new();
+
+    let mut list = Vec::<u16>::new();
 
     k = 1 + (beg >> 26);
-    while k <= 1 + (end >> 26) { i += 1; list.push(k); k += 1 }
+    while k <= 1 + (end >> 26) { list.push(k); k += 1 }
 
     k = 9 + (beg >> 23);
-    while k <= 9 + (end >> 23) { i += 1; list.push(k); k += 1 }
+    while k <= 9 + (end >> 23) { list.push(k); k += 1 }
 
     k = 73 + (beg >> 20);
-    while k <= 73 + (end >> 20) { i += 1; list.push(k); k += 1 }
+    while k <= 73 + (end >> 20) { list.push(k); k += 1 }
 
     k = 585 + (beg >> 17);
-    while k <= 585 + (end >> 17) { i += 1; list.push(k); k += 1 }
+    while k <= 585 + (end >> 17) { list.push(k); k += 1 }
 
     k = 4681 + (beg >> 14);
-    while k <= 4681 + (end >> 14) { i += 1; list.push(k); k += 1 }
+    while k <= 4681 + (end >> 14) { list.push(k); k += 1 }
 
     return list;
 }
@@ -70,7 +69,9 @@ mod tests {
 
     #[test]
     fn csi_test() {
-        reg2bins(3, 10);
+        let res = reg2bins(3, 10);
+        let expected = [1, 9, 73, 585, 4681];
+        assert_eq!(res, expected);
     }
 
 //

@@ -82,8 +82,8 @@ pub fn parse_chunks(input: &[u8]) -> IResult<&[u8], ChunkPos> {
     Ok((input, ChunkPos { chunk_beg, chunk_end }))
 }
 
-pub fn parse_voffsets(voffset: u64) -> IResult<u64, VirtualOffset> {
-    Ok((voffset, VirtualOffset { coffset: coffset(voffset), uoffset: uoffset(voffset) }))
+pub fn parse_voffset(voffset: u64) -> (u32, u32) {
+    (coffset(voffset), uoffset(voffset))
 }
 
 pub fn coffset(voffset: u64) -> u32 {
