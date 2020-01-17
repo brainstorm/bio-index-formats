@@ -74,6 +74,17 @@ mod tests {
         assert_eq!(res, expected);
     }
 
+// Not complying with SAM spec, page 15, section 4.2.1 since I don't agree with
+// the (signed) types they use, see: https://github.com/samtools/hts-specs/pull/460
+//    #[test]
+//    fn csi_test_4680() {
+//        // As seen in page 15 of SAMv1 spec
+//        let res = reg2bins(-1, 0);
+//        let expected = [4680];
+//        assert_eq!(res, expected);
+//    }
+
+
 //
 //    #[test]
 //    fn csi_test() {
