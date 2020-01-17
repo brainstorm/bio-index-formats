@@ -39,11 +39,11 @@ fn maximum_bin_width(min_shift: u32, depth: u32) -> u32 {
 
 // This is the SAM spec C code, oxidized by hand.
 // See: https://gist.github.com/brainstorm/f76da194a03730a98e23766134d54d7b
-pub fn reg2bins(beg: u16, mut end: u16) -> Vec<u16> {
-    let mut k: u16;
+pub fn reg2bins(beg: u32, mut end: u32) -> Vec<u32> {
+    let mut k: u32;
     end -= 1;
 
-    let mut list = Vec::<u16>::new();
+    let mut list = Vec::<u32>::new();
 
     k = 1 + (beg >> 26);
     while k <= 1 + (end >> 26) { list.push(k); k += 1 }
