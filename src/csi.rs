@@ -44,6 +44,7 @@ pub fn reg2bins(beg: u32, mut end: u32) -> Vec<u32> {
     end -= 1;
 
     let mut list = Vec::<u32>::new();
+    list.push(0); // 1-indexed
 
     k = 1 + (beg >> 26);
     while k <= 1 + (end >> 26) { list.push(k); k += 1 }
@@ -62,6 +63,9 @@ pub fn reg2bins(beg: u32, mut end: u32) -> Vec<u32> {
 
     return list;
 }
+
+//pub fn region_contains_bin(reference_id: u32, bin_id: u32, bins: Vec<u32>) {
+//}
 
 #[cfg(test)]
 mod tests {

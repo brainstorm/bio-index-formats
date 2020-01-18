@@ -1,4 +1,5 @@
 use std::path::Path;
+//use std::collections::HashSet;
 
 use bio_index_formats::parser_bai::{parse_bai, parse_voffset, Ref};
 use bio_index_formats::csi::reg2bins;
@@ -12,32 +13,29 @@ pub fn reference_ids(fname: String) -> Vec<String> {
         .collect()
 }
 
-fn htsget_query(refs: &Vec<Ref>, chrom: &str, start: u32, end: u32) -> (u32, u32) {
-    let mut range_beg = u64::max_value();
-    let mut range_end: u64 = 0;
+fn htsget_query(reference: &Ref, start: u32, end: u32) -> (u32, u32) {
+    let mut range_beg = u32::max_value(); // Must be Option instead of Integer... if it does not find anything, then None.
+    let mut range_end: u32 = 0;
+    let bin_ids:Vec<u32>;
 
-    dbg!("ReferenceID index has string: {}", chrom);
-    let bins_range = reg2bins(start, end);
+//    let bin_ids: HashSet::<u32> = reg2bins(start, end).iter().cloned().collect();
+    bin_ids = reg2bins(start, end);
+    println!("{:?}", &bin_ids);
 
-    for reference in refs.iter() {
-        // XXX: Check that this reference corresponds to the chrom we are looking for
-        // XXX: Read BAM header to retrieve chrom names (code in htsget-aws from rust-htslib)
-        println!("{:?}", reference);
-        for bin in &reference.bins {
-            if bins_range.contains(&bin.bin_id) {
-                for chunk in bin.chunks.iter() {
-                    range_beg = range_beg.min(chunk.chunk_beg);
-                    range_end = range_end.max(chunk.chunk_end);
-                }
+    //println!("{:?}", reference);
+    for bin in reference.bins.iter() {
+        if bin_ids.contains(&bin.bin_id) { // XXX: Explore sets instead. contains is not efficient
+            for chunk in bin.chunks.iter() {
+                let chunk_beg = parse_voffset(chunk.chunk_beg).1;
+                let chunk_end = parse_voffset(chunk.chunk_end).1;
+                range_beg = range_beg.min(chunk_beg);
+                range_end = range_end.max(chunk_end);
             }
         }
     }
 
     // Only interested in compressed offset for the final htsget range (request to BAM)
-    let (_, start_coffset) = parse_voffset(range_beg);
-    let (_, end_coffset) = parse_voffset(range_end);
-
-    (start_coffset, end_coffset)
+    (range_beg, range_end)
 }
 
 fn main() -> std::result::Result<(), std::boxed::Box<dyn std::error::Error>> {
@@ -48,12 +46,23 @@ fn main() -> std::result::Result<(), std::boxed::Box<dyn std::error::Error>> {
     //const BAI_FILE: &'static [u8] = include_bytes!("../tests/data/SBJ00154_PRJ190634_LPRJ190634-ready.bam.bai");
 
     let bam_fname = "tests/data/htsnexus_test_NA12878.bam";
-    let bam_header = reference_ids(bam_fname.to_string());
+    let ref_names = reference_ids(bam_fname.to_string());
+    //println!("{:?}", ref_names);
+    //dbg!(ref_names);
 
     let bai = parse_bai(BAI_FILE);
     let refs = bai.map(|r| r.1.refs)?;
+    //println!("References = {:?}", refs);
+    //println!("Number of refs in the BAI = {}", refs.len());
 
-    let range = htsget_query(&refs, &bam_header[1], 1, 300);
+    let chrom = "11";
+
+    let ref_id = ref_names.iter().position(|name| name == chrom).unwrap();
+    //println!("ref_id = {}", ref_id);
+    let reference = &refs[ref_id];
+    println!("reference = {:?}", reference);
+    
+    let range = htsget_query(reference, 4999976, 5002147);
     dbg!(range);
 
 //    let a_bin = &a_chunk[10].bins[0].chunks;
