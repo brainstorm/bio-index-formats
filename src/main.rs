@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use bio_index_formats::parser_bai::{parse_bai, parse_voffset, Ref};
+use bio_index_formats::parser_bai::{parse_bai, coffset, Ref};
 use bio_index_formats::csi::{ reg2bin };
 use rust_htslib::bam::{ Reader, Read };
 
@@ -22,8 +22,8 @@ fn htsget_query(reference: &Ref, start: u32, end: u32) -> (u32, u32) {
     for bin in reference.bins.iter() {
         if bin_id == bin.bin_id {
             for chunk in bin.chunks.iter() {
-                let chunk_beg = parse_voffset(chunk.chunk_beg).0;
-                let chunk_end = parse_voffset(chunk.chunk_end).0;
+                let chunk_beg = coffset(chunk.chunk_beg);
+                let chunk_end = coffset(chunk.chunk_end);
 
                 range_beg = range_beg.min(chunk_beg);
                 range_end = range_end.max(chunk_end);
