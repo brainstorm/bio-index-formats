@@ -1,5 +1,5 @@
 [package]
-name = "bio-index-formats"
+name = "bio_index_formats"
 version = "0.1.0"
 authors = ["Roman Valls Guimera <brainstorm@nopcode.org>", "Christian Pérez-Llamas <chrispz@gmail.com>"]
 edition = "2018"
