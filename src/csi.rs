@@ -1,4 +1,5 @@
 // This is the SAM spec C code, oxidized by hand.
+// Returns the R-Tree path as its traversed as a vector of bins
 // See: https://gist.github.com/brainstorm/f76da194a03730a98e23766134d54d7b
 pub fn reg2bins(beg: u32, mut end: u32) -> Vec<u32> {
     let mut k: u32;
