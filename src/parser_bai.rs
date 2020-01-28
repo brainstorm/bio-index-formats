@@ -1,3 +1,15 @@
+# Apparently Nom does not have "real" streaming:
+# "the "streaming" nom mentions in its feature is a bit of a lie. It allows incomplete inputs but only in synchronous contexts, where you have to wait for more data in a blocking manner. You can't really "pause" your parsing process and "resume" it later once you get more data from your stream. So it's not great in asynchronous contexts"
+# 
+# https://github.com/Geal/nom/issues/811#issuecomment-579014836
+#
+# Also, tokio workarounds are tricky at the moment:
+# https://github.com/tokio-rs/bytes/issues/324#issuecomment-576723189
+
+# Might consider migrating to combine instead:
+# https://github.com/Marwes/combine/issues/276
+# https://github.com/Marwes/combine/blob/master/examples/async.rs
+
 use nom::{ IResult };
 use nom::bytes::streaming::{ tag };
 use nom::number::streaming::{ le_u32, le_u64 };
