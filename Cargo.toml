@@ -1,9 +1,8 @@
 [package]
 name = "bio_index_formats"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["Roman Valls Guimera <brainstorm@nopcode.org>", "Christian Pérez-Llamas <chrispz@gmail.com>"]
 edition = "2018"
 
 [dependencies]
 nom = "5.1.0"
-rust-htslib = "0.26.1"
