@@ -1,5 +1,6 @@
 extern crate nom;
 pub mod parser_bai;
+pub mod generate_bam;
 pub mod csi;
 
 #[derive(Default)]
